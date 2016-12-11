@@ -32,12 +32,15 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.shape.Rectangle;
 
+import org.opencv.core.Core;
 import org.opencv.core.Rect;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
+import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
+
 
 
 /**
@@ -62,90 +65,52 @@ public class CameraController implements Initializable
     private String FolderName;
     private int PictureCount = 0;
     private ScheduledExecutorService timer;
-    private static VideoCapture capture = new VideoCapture();
+    private VideoCapture capture;
     private boolean cameraActive = false;
     private static int cameraId = 0;
     private boolean takeSnapShot = false;
     
     private BufferedImage[] Pictures = new BufferedImage[6];
+    
+    
+    private matScale = 1;
        
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-//        FaceRect.setX(0);
-//        FaceRect.setY(0);
-//        FaceRect.setWidth(currentFrame.fitWidthProperty().intValue());
-//        FaceRect.setHeight(currentFrame.fitHeightProperty().intValue());
-    }
-    
-    @FXML 
-    private void PrintSTuff()
-    {
-        Print.Say("\n\n\n\nHAHAHAHAHHAHA");
-    
-    }
-
-    @FXML
-    private void TakeShot(Mat I)
-    {     
-        if (PictureCount <= 6)
-        {
-            Mat uncropped = I;
-            Rect roi = new Rect(FaceRect.xProperty().intValue(),FaceRect.yProperty().intValue(), FaceRect.widthProperty().intValue(), FaceRect.heightProperty().intValue());
-            Mat cropped = new Mat(uncropped, roi);
-            Print.Say("\nTAKEING SHOT\n");
-            BufferedImage BI = null;           
-            
-            Image imageToShow02 = mat2Image(cropped);
-                            
-            currentPicture.setImage(imageToShow02);
-
-            Pictures[PictureCount] = matToBufferedImage(cropped,BI );
-           
-            Print.Say("\nPictures:"+Pictures[PictureCount]+"\n");
-            PictureCount++;
-        }             
-    }    
- 
-    @FXML
-    private void SnapShot(ActionEvent event) {
-       takeSnapShot = true;
-    }
-    
-   @FXML
-    private void SaveFolder(ActionEvent event)
-    {
-        if (Pictures.length > 0)
-        {
-            //Print.Say(TFFolderName.getText());
-            File file = new File("JESSIE_FOLDER");
-            if (!file.exists()) {
-                if (file.mkdir()) {
-                    System.out.println("Directory is created!");
-                } else {
-                    System.out.println("Failed to create directory!");
-                }
-            }            
-            for (int i = 0; i < Pictures.length; i++)
-            {      
-                 ImageIo.writeImage(Pictures[i], "jpg", "JESSIE_FOLDER/Picture_0"+i+".jpg") ;  
-            }
-        }
-    }  
-
-    @FXML
-    protected void startCamera(ActionEvent event) throws IOException {
+        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         capture = new VideoCapture();
+        FaceRect = new Rectangle();
+        FaceRect.setX(0);
+        FaceRect.setY(0);
+        FaceRect.setWidth(150);
+        FaceRect.setHeight(150);
+        
+        System.err.println("CURRENT FRAM WIDTH: " + currentFrame.fitWidthProperty().intValue());
+        System.err.println("CURRENT FRAM Height: " + currentFrame.fitHeightProperty().intValue());
+    }
+    
+    private Mat ScaleMatbyScroll(Mat frame)
+    {
+        Mat scaledMat = null;
+        
+        
+        
+        
+        
+        return scaledMat;
+    }
+    @FXML
+    protected void startCamera(ActionEvent event) throws IOException 
+    {
         if (!this.cameraActive) {
             // start the video capture
-            capture.open(01);
-            
+            capture.open(cameraId); //= new VideoCapture(cameraId);
 
             // is the video stream available?
             if (this.capture.isOpened()) {
                 this.cameraActive = true;
 
-                // grab a frame every 33 ms (30 frames/sec)
-                
+                // grab a frame every 33 ms (30 frames/sec)                
                 Print.Fail();
                 Runnable frameGrabber = new Runnable() {
 
@@ -157,12 +122,16 @@ public class CameraController implements Initializable
                         Image imageToShow = mat2Image(frame);
                         //updateImageView(currentFrame, imageToShow);
                         
-                        if (takeSnapShot && PictureCount < 6)
-                        {
+                        if (takeSnapShot && PictureCount <= 6)
+                        {                            
                             Mat frame02 = grabFrame();
                             TakeShot(frame02);
+                            System.err.println("SnapShot False");
                             takeSnapShot = false;                           
-                        }              
+                        }       
+                        
+                        
+                        
                         currentFrame.setImage(imageToShow);
                     }
                 };
@@ -185,24 +154,78 @@ public class CameraController implements Initializable
             this.stopAcquisition();
         }
     }   
-//    @FXML
-//    private  void SnapShot(ActionEvent event)
-//    {
-//        OpenCVFrameGrabber grabber = new OpenCVFrameGrabber(0);
-//        
-//        try{
-//            grabber.start();
+
+    @FXML
+    private void SnapShot(ActionEvent event) {
+        
+       takeSnapShot = true;
+    }
+    
+   @FXML
+    private void SaveFolder(ActionEvent event)
+    {
+        if (Pictures.length > 0)
+        {
+            //Print.Say(TFFolderName.getText());
+            File file = new File("JESSIE_FOLDER");
+            if (!file.exists()) {
+                if (file.mkdir()) {
+                    System.out.println("Directory is created!");
+                } else {
+                    System.out.println("Failed to create directory!");
+                }
+            }            
+            for (int i = 0; i < Pictures.length; i++)
+            {      
+                 ImageIo.writeImage(Pictures[i], "jpg", "JESSIE_FOLDER/Picture_0"+i+".jpg") ;  
+            }
+        }
+    }
+    
+    private void TakeShot(Mat I)
+    {     
+        
+        if (PictureCount <= 6)
+        {
+            System.err.println("CURRENT I WIDTH: " + I.width());
+            System.err.println("CURRENT I Height: " + I.height());
+            
+            System.err.println("CURRENT FRAM WIDTH: " + currentFrame.fitWidthProperty().intValue());
+            System.err.println("CURRENT FRAM Height: " + currentFrame.fitHeightProperty().intValue());
+            
+            //Mat croppedimage = I; //cropImage(image,rect);
+            Mat resizeimage = new Mat();
+            Size sz = new Size(150, 150);
+            Imgproc.resize( I, resizeimage, sz );
+            
+            Mat uncropped = I;
+            uncropped.size().height = 10;
+            uncropped.size().width = 30;
+            //Mat cropped = fullImage(Rect(0,0,(I.width()/2),(I.height()/2));
 //            
-//            IplImage img = grabber.grab();
-//            if(img != null)
-//            {
-//                cvSaveImage("PIC.jpg", img);
+//            Print.Say("CURRENT PICTURE");
+//            Rect roi = new Rect(FaceRect.xProperty().intValue(),FaceRect.yProperty().intValue(), FaceRect.widthProperty().intValue(), FaceRect.heightProperty().intValue());
 //            
-//            
-//            } 
-//       
-//        }catch(Exception e){e.printStackTrace();}; 
-//    }
+//            Mat cropped = new Mat(uncropped, roi);
+            BufferedImage BI = null;           
+            
+            //Image imageToShow02 = mat2Image(cropped);
+            Image imageToShow02 = mat2Image(resizeimage);
+            
+
+            
+            currentPicture.setImage(imageToShow02);
+
+            //Pictures[PictureCount] = matToBufferedImage(cropped,BI );
+            Pictures[PictureCount] = matToBufferedImage(resizeimage,BI );
+           
+            Print.Say("\nPictures:"+Pictures[PictureCount]+"\n");
+            PictureCount++;
+            
+        } 
+        
+        Print.Say("\nSHOT TAKEN\n" + PictureCount);
+    }    
     
     public static BufferedImage matToBufferedImage(Mat matrix, BufferedImage bimg)
     {
